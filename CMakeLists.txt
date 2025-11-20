@@ -51,22 +51,6 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g ")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -o0 ")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -g -o0 ")
-
-# 设置链接器标志
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
-
-
-# 移除CMAKE_EXE_LINKER_FLAGS的设置，改用target_link_options
-message(STATUS "已在全局编译标志中添加AddressSanitizer选项")
-message(STATUS "SMALL_MEMORY模式下，AddressSanitizer配置已全局应用")
-
-# 为free_mdict目标添加AddressSanitizer链接选项
-#target_compile_options(free_mdict PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
-#target_link_options(free_mdict PRIVATE -fsanitize=address)
-
 # 查找zlib库
 find_package(ZLIB REQUIRED)
 if(ZLIB_FOUND)

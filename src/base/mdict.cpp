@@ -309,18 +309,11 @@ namespace FreeMDict
             return -1;
         }
 
-        uint64_t begin_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-        out_ << "begin time " << begin_time << std::endl;
-
         if (parseKeywordBlocks() != 0) // key 和offset
         {
             out_ << "解析关键词块失败" << std::endl;
             return -1;
         }
-
-        out_ << "end time " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() << std::endl;
-
-        out_ << "parseKeywordBlocks time " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - begin_time << std::endl;
 
         return 0;
     }

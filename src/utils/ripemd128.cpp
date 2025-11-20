@@ -219,11 +219,6 @@ int ripemd128PaddingISO7816(uint8_t **data, int data_len) {
   uint8_t* padding = (uint8_t *) calloc((size_t) (padding_length), sizeof(uint8_t));
   padding[0] = 0x80; // 0x80
 
-//	printf("padding:");
-//	for(int i =0;i<padding_length;i++)
-//	   printf("%d ", padding[i]);
-//	printf("\n");
-
   // 1 byte for 0x80
   uint8_t * new_data = (uint8_t *) calloc((size_t) (padding_length + data_len), sizeof(uint8_t));
   // concat data and padding
@@ -248,24 +243,9 @@ int ripemd128PaddingISO7816(uint8_t **data, int data_len) {
   memcpy(x_data, new_data, data_len + padding_length);
   // concat length bits
   memcpy(x_data + (data_len + padding_length) * sizeof(uint8_t), length_bits , 2 * sizeof(uint32_t));
-//	char* tmpdata = *data;
-//	if (*tmpdata) free(*tmpdata);
   if (new_data) free(new_data);
   free(padding);
   free(length_bits);
-
-//	printf("xdata:");
-//	for(int i =0;i<xdata_length;i++)
-//	   printf("%02x", x_data[i]);
-//	printf("\n");
-
-  // little endian to big endian
-//	uint32_t testd = x_data[3];
-//	testd = testd << 8 | x_data[2];
-//
-//  testd = testd << 8 | x_data[1];
-//  testd = testd << 8 | x_data[0];
-//  printf("testd:%u\n" ,testd);
 
   (*data) = x_data;
 
@@ -295,7 +275,6 @@ byte *ripemd128(const byte *message, int len)
    for (nbytes=length; nbytes > 63; nbytes-=64) {
       for (i=0; i<16; i++) {
          X[i] = BYTES_TO_DWORD(message);
-//         printf("%ld ", X[i]);
          message += 4;
       }
       ripemd128compress(digest, X);
@@ -310,12 +289,6 @@ byte *ripemd128(const byte *message, int len)
       hashcode[i+2] = (byte) ((digest[i >> 2] >> 16) & 0x000000ff);  /*  significant bits.     */
       hashcode[i+3] = (byte) ((digest[i >> 2] >> 24) & 0x000000ff);
    }
-//   for (i=0; i<RMDsize/8; i+=4) {
-//     printf("%02x(%d)",hashcode[i]  ,hashcode[i]);         /* implicit cast to byte  */
-//     printf("%02x(%d)",hashcode[i+1],hashcode[i+1]);  /*  extracts the 8 least  */
-//     printf("%02x(%d)",hashcode[i+2],hashcode[i+2]);  /*  significant bits.     */
-//     printf("%02x(%d)",hashcode[i+3],hashcode[i+3]);
-//   }
 
    return (byte *)hashcode;
 }
