@@ -1,0 +1,59 @@
+#pragma once
+
+#include <zlib.h>
+#include <fstream>
+#include <stdexcept>
+#include <iostream>
+#include <map>
+#include <string>
+
+#include <codecvt>
+#include <locale>
+namespace FreeMDict
+{   
+    namespace Utils
+    {
+        u_char *zlibDecompress(u_char *key_index_comp, uint64_t key_index_comp_len, uint64_t key_index_decomp_len)
+        {
+            u_char *decomp = new u_char[key_index_decomp_len];
+
+            // 使用zlib进行解压缩
+            z_stream zs;
+            memset(&zs, 0, sizeof(zs));
+
+            // 初始化zlib解压缩流
+            if (inflateInit(&zs) != Z_OK)
+            {
+                delete[] decomp;
+                return nullptr;
+            }
+
+            // 设置输入缓冲区
+            zs.next_in = reinterpret_cast<Bytef *>(key_index_comp);
+            zs.avail_in = static_cast<uInt>(key_index_comp_len);
+
+            // 设置输出缓冲区
+            zs.next_out = reinterpret_cast<Bytef *>(decomp);
+            zs.avail_out = static_cast<uInt>(key_index_decomp_len);
+
+            // 执行解压缩
+            int ret = inflate(&zs, Z_FINISH);
+
+            // 清理zlib流
+            inflateEnd(&zs);
+
+            // 检查解压缩是否成功
+            if (ret != Z_STREAM_END)
+            {
+                delete[] decomp;
+                return nullptr;
+            }
+
+            return decomp;
+        }
+ 
+        const uint32_t NO_COMP_TYPE = 0x00 << 24 | 0x00 << 16 | 0x00 << 8 | 0x00;
+        const uint32_t LZO_COMP_TYPE = 0x00 << 24 | 0x00 << 16 | 0x00 << 8 | 0x01;
+        const uint32_t ZLIB_COMP_TYPE = 0x00 << 24 | 0x00 << 16 | 0x00 << 8 | 0x02;
+    }
+}
