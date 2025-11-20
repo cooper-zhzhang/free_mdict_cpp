@@ -47,19 +47,27 @@ namespace FreeMDict
     struct KeywordItem
     {
         // 构造函数
-        KeywordItem(std::string &&keyword, uint64_t offset) : keyword_utf8(std::move(keyword)), record_offset(offset),record_size(0) {}
+        KeywordItem(std::string &&keyword, uint64_t offset) : keyword(std::move(keyword)), record_offset(offset),record_size(0) {}
         
         // 移动构造函数
         KeywordItem(KeywordItem &&other) noexcept : 
-            keyword_utf8(std::move(other.keyword_utf8)), 
+            keyword(std::move(other.keyword)), 
             record_offset(other.record_offset), 
             record_size(other.record_size) {
             // 将原对象的偏移量和大小设为0，确保其处于有效但无害的状态
             other.record_offset = 0;
             other.record_size = 0;
         }
+
+        // 赋值运算符
+        KeywordItem &operator=(KeywordItem &other) noexcept {
+            keyword = other.keyword;
+            record_offset = other.record_offset;
+            record_size = other.record_size;
+            return *this;
+        }
         // 关键词的utf8编码
-        std::string keyword_utf8;
+        std::string keyword;
         // 数据的的偏移量
         uint64_t record_offset;
         uint64_t record_size; 

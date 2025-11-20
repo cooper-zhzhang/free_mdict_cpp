@@ -39,9 +39,11 @@ namespace FreeMDict {
         int parseKeywordBlock(int i); // 解析关键词块的私有方法
         int parseKeywordBlocks(); // 解析关键词块的私有方法
         int parseRecordSection(); // 解析关键词记录的私有方法
+
+        void clear_up_keyword_items();
         
         u_char * read_compress_data(uint64_t key_index_comp_len, uint64_t  key_index_decomp_len, bool decrypt=false, bool use_zlib=false);
-        const KeywordItem* getKeyWord(const std::string &key); // 根据关键词查找关键词项
+        KeywordItem getKeyWord(const std::string &key); // 根据关键词查找关键词项
 
 
         std::string dict_path_; // 存储字典文件路径

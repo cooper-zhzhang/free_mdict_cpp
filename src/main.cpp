@@ -1,89 +1,75 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <string>
+
 #include "include/base/mdict.h"
 
-using namespace std;
+#include <gflags/gflags.h>
+  
+void listKeywords(const FreeMDict::Mdict &mdict)
+{
+    const std::vector<FreeMDict::KeywordItem *> &keyword_items = mdict.getKeywordItems();
+    for (const FreeMDict::KeywordItem *item : keyword_items)
+    {
+        std::cout << item->keyword << std::endl;
+    }
+}
+
+void searchWords(FreeMDict::Mdict &mdict)
+{
+    while (true)
+    {
+        std::string word;
+        std::cout << "请输入要查询的单词: ";
+        std::cin >> word;
+        if (word == "\\q") {
+            break;
+        }
+        mdict.getResourceByKey(word, std::cout);
+    }
+}
+
+// 定义命令行参数
+DEFINE_string(dict, "", "字典文件路径");
+DEFINE_bool(verbose, false, "启用详细输出信息");
+DEFINE_bool(list_keywords, false, "列出所有关键词");
+DEFINE_string(search, "", "搜索关键词");
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
-    {
-        cout << "Usage: " << argv[0] << " <dict_path>" << endl;
+    // 解析命令行参数
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+        
+    // 显示帮助信息
+    if (FLAGS_dict.empty()) {
+        std::cout << "Usage: " << argv[0] << " --dict=<dict_path> [options]" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "  --dict=<path>       字典文件路径（必需）" << std::endl;
+        std::cout << "  --verbose           启用详细输出" << std::endl;
+        std::cout << "  --list_keywords     列出所有关键词" << std::endl;
+        std::cout << "  --help              显示此帮助信息" << std::endl;
         return 1;
     }
+    
 
-    // 创建一个输出到/dev/null的流，相当于"空"输出流
     int64_t begintime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    
     std::ofstream null_out("/dev/null");
-    FreeMDict::Mdict mdict(argv[1], null_out);
-
-    
+    FreeMDict::Mdict mdict(FLAGS_dict.c_str(), null_out);
     mdict.init();
-    #ifdef SMALL_MEMORY
     mdict.displayInfo();
-    #endif //SMALL_MEMORY
-    
-    // FreeMDict::Mdict mdict1(argv[1], null_out);
-    // mdict1.init();
-    
-    // FreeMDict::Mdict mdict2(argv[1], null_out);
-    // mdict2.init();
-    
-    // FreeMDict::Mdict mdict3(argv[1], null_out);
-    // mdict3.init();
-    // FreeMDict::Mdict mdict4(argv[1], null_out);
-    // mdict4.init();
-    
+
     int64_t end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     std::cout << "init cost time " << end - begintime << " ms" << std::endl;
 
-    // while (1)
-    // {
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //     std::string word;
-    //     word = "name";
-    //     //std::cin >> word; // 清除输入缓冲区中的换行符
-    //     if(word.empty())
-    //     {
-    //         continue;
-    //     }
-    //     if (word == "exit")
-    //     {
-    //         break;
-    //     }
-        
-    //     mdict.getResourceByKey(word, cout);
-    // }
-
-    const std::vector<FreeMDict::KeywordItem *> &keyword_items = mdict.getKeywordItems();
-    for (int i = 0; i < keyword_items.size(); ++i) {
-        ofstream mp3_file("1.html", ios::binary);
-        if (mp3_file.is_open())
-        {
-            if(mdict.getResourceByKey(keyword_items[i]->keyword_utf8, mp3_file)){
-                mp3_file.close();
-            }   else {
-                cout << "获取资源失败" << endl;
-            }
-        }   
-        if(i ==  keyword_items.size()-1){
-            i = 0;
-        }
+    if (FLAGS_list_keywords) {
+        listKeywords(mdict);
+        return 0;
+    }else if (!FLAGS_search.empty()) {
+        searchWords(mdict);
+        return 0;
     }
-
-    // // 打开一个名为1.mp3的文件
-    // ofstream mp3_file("1.mp3", ios::binary);
-    // if (mp3_file.is_open())
-    // {
-    //     mdict.getResourceByKey("\\check__gb_2.mp3\0", mp3_file);
-    //     mp3_file.close();
-    //     cout << "资源已写入1.mp3文件" << endl;
-    // }
-    // else
-    // {
-    //     cout << "无法创建文件1.mp3" << endl;
-    // }
-
+    
     return 0;
 }

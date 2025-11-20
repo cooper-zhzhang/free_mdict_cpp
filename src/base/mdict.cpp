@@ -88,6 +88,9 @@ namespace FreeMDict
         {
             throw std::runtime_error("parse file failed : " + dict_path_);
         }
+        // 有些字典中的顺序和关键词记录中的顺序不一致，需要排序
+        sort(keyword_items_.begin(), keyword_items_.end(), [](const KeywordItem *a, const KeywordItem *b)
+             { return a->keyword < b->keyword; });
 
         return true;
     }
@@ -548,52 +551,6 @@ namespace FreeMDict
             {
                 return -1;
             }
-
-            // KeyBlock *block = key_blocks_[i];
-            // block->display(this->out_, i);
-
-            // u_char *key_index_decomp = read_compress_data(block->comp_size, block->decomp_size);
-            // if (key_index_decomp == nullptr)
-            // {
-            //     out_ << "获取压缩数据失败" << std::endl;
-            //     return -1;
-            // }
-
-            // KeywordItem *pre_item = nullptr;
-            // uint pos = 0;
-            // uint keywords_num = block->keywords_num;
-            // for (int j = 0; j < keywords_num; ++j)
-            // {
-            //     uint64_t keyword_offset = Utils::fromBigEndianUInt64(key_index_decomp + pos, sizeof(uint64_t));
-            //     pos += sizeof(uint64_t);
-
-            //     uint64_t begin_pos = pos;
-            //     uint64_t end_pos = 0;
-            //     std::string keyword_utf8;
-            //     if (code_type_ == Utils::CodeType::UTF16LE)
-            //     {
-            //         uint64_t off = Utils::check_null<char16_t>(key_index_decomp + pos, block->decomp_size - pos);
-            //         pos += off;
-            //         end_pos = pos - sizeof(char16_t); // ignore null character
-            //         keyword_utf8 = Utils::utf16leToUtf8((char16_t *)(key_index_decomp + begin_pos), (char16_t *)(key_index_decomp + end_pos));
-            //     }
-            //     else if (code_type_ == Utils::CodeType::UTF8)
-            //     {
-            //         uint64_t off = Utils::check_null<char>(key_index_decomp + pos, block->decomp_size - pos);
-            //         pos += off;
-            //         end_pos = pos - sizeof(char);
-            //         keyword_utf8 = std::string((char *)(key_index_decomp + begin_pos), end_pos - begin_pos);
-            //     }
-
-            //     KeywordItem *item = new KeywordItem(std::move(keyword_utf8), keyword_offset);
-            //     keyword_items_.push_back(item);
-            //     if (pre_item != nullptr)
-            //     {
-            //         pre_item->record_size = item->record_offset - pre_item->record_offset;
-            //     }
-            //     pre_item = item;
-            // }
-            // delete[] key_index_decomp;
         }
 
         return 0;
@@ -657,7 +614,7 @@ namespace FreeMDict
         return 0;
     }
 
-    const KeywordItem *Mdict::getKeyWord(const std::string &key)
+    KeywordItem Mdict::getKeyWord(const std::string &key)
     {
 
 #if SMALL_MEMORY
@@ -675,10 +632,12 @@ namespace FreeMDict
             file_.seekg(offset + keyword_blocks_begin_pos_);
             if (parseKeywordBlock(i) != 0)
             {
-                return nullptr;
+                return KeywordItem("", 0);
             }
             else
             {
+                sort(keyword_items_.begin(), keyword_items_.end(), [](const KeywordItem *a, const KeywordItem *b)
+                     { return a->keyword < b->keyword; });
                 break;
             }
         }
@@ -693,7 +652,7 @@ namespace FreeMDict
         while (left <= right)
         {
             mid = left + (right - left) / 2; // 避免整数溢出
-            const std::string &mid_keyword = keyword_items_[mid]->keyword_utf8;
+            const std::string &mid_keyword = keyword_items_[mid]->keyword;
 
             int cmp_result = mid_keyword.compare(key);
             if (cmp_result == 0)
@@ -712,18 +671,34 @@ namespace FreeMDict
             }
         }
 
+        KeywordItem item("", 0);
         if (found)
         {
-            return keyword_items_[mid];
+            item = *(keyword_items_[mid]);
         }
-        return nullptr;
+
+#ifdef SMALL_MEMORY
+        clear_up_keyword_items();
+#endif
+
+        return item;
+    }
+
+    void Mdict::clear_up_keyword_items()
+    {
+        // 小内存下，需要释放keyword_items_
+        for (int i = 0; i < keyword_items_.size(); ++i)
+        {
+            delete keyword_items_[i];
+        }
+        keyword_items_.clear();
     }
 
     bool Mdict::getResourceByKey(std::string key, std::ostream &out)
     {
         // 1 查找关键词项
-        const KeywordItem *keyword_item = getKeyWord(key);
-        if (keyword_item == nullptr)
+        KeywordItem keyword_item = getKeyWord(key);
+        if (keyword_item.keyword.empty())
         {
             return false;
         }
@@ -732,7 +707,7 @@ namespace FreeMDict
         auto record_block_it = std::find_if(record_blocks_.begin(), record_blocks_.end(),
                                             [&keyword_item](const RecordBlockInfo *block)
                                             {
-                                                return keyword_item->record_offset >= block->decomp_record_begin_pos && keyword_item->record_offset < block->decomp_record_begin_pos + block->decomp_size;
+                                                return keyword_item.record_offset >= block->decomp_record_begin_pos && keyword_item.record_offset < block->decomp_record_begin_pos + block->decomp_size;
                                             });
 
         if (record_block_it == record_blocks_.end())
@@ -743,7 +718,7 @@ namespace FreeMDict
         out_ << "记录块存在" << std::endl;
 
         // 3 提取记录
-        uint64_t record_offset_in_block = keyword_item->record_offset - (*record_block_it)->decomp_record_begin_pos;
+        uint64_t record_offset_in_block = keyword_item.record_offset - (*record_block_it)->decomp_record_begin_pos;
         file_.seekg((*record_block_it)->com_record_begin_pos + record_block_begin_pos_);
         auto ret = read_compress_data((*record_block_it)->comp_size, (*record_block_it)->decomp_size);
         if (ret == 0)
@@ -752,22 +727,13 @@ namespace FreeMDict
             return false;
         }
 
-        auto begin_pos = ret + ((keyword_item)->record_offset - (*record_block_it)->decomp_record_begin_pos);
-        uint64_t len = (keyword_item)->record_size;
+        auto begin_pos = ret + (keyword_item.record_offset - (*record_block_it)->decomp_record_begin_pos);
+        uint64_t len = keyword_item.record_size;
         out.write(reinterpret_cast<char *>(begin_pos), len);
 
         delete[] ret;
 
-#ifdef SMALL_MEMORY
-        // 小内存下，需要释放keyword_items_
-        for (int i = 0; i < keyword_items_.size(); ++i)
-        {
-            delete keyword_items_[i];
-        }
-        keyword_items_.clear();
-#endif
-
-        return true;    
+        return true;
     }
 
     const std::vector<KeywordItem *> &Mdict::getKeywordItems() const
