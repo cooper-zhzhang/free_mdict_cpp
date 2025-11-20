@@ -20,10 +20,18 @@ namespace FreeMDict {
         Mdict(std::string dict_path, std::ostream& out);
         ~Mdict();
 
+        // 查找关键词，针对mdx. string不包含null character
         std::string lookup(std::string key);
-        std::vector<std::string> allKeys();
+
+        // 定位资源 string包含null character结束符
+        std::string locate(std::string key);
+
+        //  检查关键词是否存在
+        bool exists(std::string key);
 
         bool init();
+
+        //  通用的获取资源方法，将资源写入到out中
         bool getResourceByKey(std::string key, std::ostream& out);
 
         const std::vector<KeywordItem*> &getKeywordItems() const;
@@ -44,13 +52,12 @@ namespace FreeMDict {
         
         u_char * read_compress_data(uint64_t key_index_comp_len, uint64_t  key_index_decomp_len, bool decrypt=false, bool use_zlib=false);
         KeywordItem getKeyWord(const std::string &key); // 根据关键词查找关键词项
+        RecordBlockInfo* getRecordBlockInfo(uint64_t record_offset); // 根据记录偏移量查找记录块信息
 
 
         std::string dict_path_; // 存储字典文件路径
         FileType filetype_; // 存储文件类型
         std::ifstream file_; // 存储文件流
-
-
 
         // header相关
         std::streampos head_pos_; // 存储头的位置

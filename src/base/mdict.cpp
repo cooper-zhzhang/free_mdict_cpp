@@ -257,11 +257,6 @@ namespace FreeMDict
         return 0;
     }
 
-    std::string Mdict::lookup(std::string key)
-    {
-        return "";
-    }
-
     int Mdict::parseKeywordSection()
     {
         if (encrypted_ & 1)
@@ -327,10 +322,12 @@ namespace FreeMDict
         if (comp_type == Utils::NO_COMP_TYPE)
         {
             out_ << "NO_COMP_TYPE" << std::endl;
+            return nullptr;
         }
         else if (comp_type == Utils::LZO_COMP_TYPE)
         {
             out_ << "LZO_COMP_TYPE" << std::endl;
+            return nullptr;
         }
         else if (comp_type == Utils::ZLIB_COMP_TYPE)
         {
@@ -687,6 +684,44 @@ namespace FreeMDict
         keyword_items_.clear();
     }
 
+    RecordBlockInfo *Mdict::getRecordBlockInfo(uint64_t record_offset)
+    {
+        auto record_block_it = std::find_if(record_blocks_.begin(), record_blocks_.end(), [record_offset](const RecordBlockInfo *block)
+                                            { return block->decomp_record_begin_offset <= record_offset &&
+                                                     record_offset < block->decomp_record_begin_offset + block->decomp_size; });
+
+        return record_block_it == record_blocks_.end() ? nullptr : *record_block_it;
+    }
+
+    std::string Mdict::lookup(std::string key)
+    {
+        if (filetype_ != FileType::MDXTYPE)
+        {
+            return "";
+        }
+
+        std::stringstream ss;
+        if (!getResourceByKey(key, ss))
+        {
+            return "";
+        }
+        std::string str = ss.str();
+
+        if (code_type_ == Utils::CodeType::UTF8)
+        {
+            return std::string(str.c_str(), str.length() - Utils::getCodeTypeSize(Utils::CodeType::UTF8));
+        }
+        else if (code_type_ == Utils::CodeType::UTF16LE)
+        {
+        }
+        else
+        {
+            return Utils::utf16leToUtf8((char16_t *)str.c_str(), (char16_t *)str.c_str() + str.length() - Utils::getCodeTypeSize(Utils::CodeType::UTF16LE));
+        }
+
+        return str;
+    }
+
     bool Mdict::getResourceByKey(std::string key, std::ostream &out)
     {
         // 1 查找关键词项
@@ -696,14 +731,8 @@ namespace FreeMDict
             return false;
         }
 
-        // 2 查找记录块
-        auto record_block_it = std::find_if(record_blocks_.begin(), record_blocks_.end(),
-                                            [&keyword_item](const RecordBlockInfo *block)
-                                            {
-                                                return keyword_item.record_offset >= block->decomp_record_begin_pos && keyword_item.record_offset < block->decomp_record_begin_pos + block->decomp_size;
-                                            });
-
-        if (record_block_it == record_blocks_.end())
+        RecordBlockInfo *record_block = getRecordBlockInfo(keyword_item.record_offset);
+        if (record_block == nullptr)
         {
             out_ << "记录块不存在" << std::endl;
             return false;
@@ -711,18 +740,16 @@ namespace FreeMDict
         out_ << "记录块存在" << std::endl;
 
         // 3 提取记录
-        uint64_t record_offset_in_block = keyword_item.record_offset - (*record_block_it)->decomp_record_begin_pos;
-        file_.seekg((*record_block_it)->com_record_begin_pos + record_block_begin_pos_);
-        auto ret = read_compress_data((*record_block_it)->comp_size, (*record_block_it)->decomp_size);
+        file_.seekg(record_block->com_record_begin_offset + record_block_begin_pos_);
+        auto ret = read_compress_data(record_block->comp_size, record_block->decomp_size);
         if (ret == 0)
         {
             out_ << "解压记录失败" << std::endl;
             return false;
         }
 
-        auto begin_pos = ret + (keyword_item.record_offset - (*record_block_it)->decomp_record_begin_pos);
-        uint64_t len = keyword_item.record_size;
-        out.write(reinterpret_cast<char *>(begin_pos), len);
+        auto begin_pos = ret + (keyword_item.record_offset - record_block->decomp_record_begin_offset);
+        out.write(reinterpret_cast<char *>(begin_pos), keyword_item.record_size);
 
         delete[] ret;
 

@@ -77,12 +77,12 @@ namespace FreeMDict
         {
             uint64_t comp_size;
             uint64_t decomp_size;
-            u_char *record_block; // 记录块的原始数据
+            //u_char *record_block; // 记录块的原始数据
             
-            uint64_t decomp_record_begin_pos; //解压后的记录块的开始位置 包括
+            uint64_t decomp_record_begin_offset; //解压后的记录块的开始位置 包括
             //uint64_t decomp_record_end_pos; //解压后的记录块的开始位置 不包括
 
-            uint64_t com_record_begin_pos; //压缩的记录块的开始位置 包括
+            uint64_t com_record_begin_offset; //压缩的记录块的开始位置 包括
             //uint64_t com_record_end_pos; //压缩的记录块的结束位置 不包括
 
 
@@ -91,9 +91,9 @@ namespace FreeMDict
                   uint64_t decomp_record_end_pos, uint64_t com_record_begin_pos, uint64_t com_record_end_pos) : comp_size(comp_size),
                 decomp_size(decomp_size),
                 //record_block(record_block),
-                decomp_record_begin_pos(decomp_record_begin_pos),
+                decomp_record_begin_offset(decomp_record_begin_pos),
                 //decomp_record_end_pos(decomp_record_end_pos),
-                com_record_begin_pos(com_record_begin_pos)/*,
+                com_record_begin_offset(com_record_begin_pos)/*,
                 com_record_end_pos(com_record_end_pos)*/ {}
 
         };

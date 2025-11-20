@@ -26,7 +26,8 @@ void searchWords(FreeMDict::Mdict &mdict)
         if (word == "\\q") {
             break;
         }
-        mdict.getResourceByKey(word, std::cout);
+        std::string result = mdict.lookup(word);
+        std::cout << result;// << std::endl;
     }
 }
 

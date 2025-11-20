@@ -223,7 +223,7 @@ namespace FreeMDict
             return converter.to_bytes(u16str);
         }
 
-        inline std::string utf16leToUtf8(char16_t *s, char16_t *e)
+        inline std::string utf16leToUtf8(const char16_t *s, const char16_t *e)
         {
             std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
             return converter.to_bytes(s, e);
