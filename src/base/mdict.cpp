@@ -318,9 +318,11 @@ namespace FreeMDict
         out_ << "end time " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() << std::endl;
 
         out_ << "parseKeywordBlocks time " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count() - begin_time << std::endl;
+
+        return 0;
     }
 
-    // TODO: 这个函数有内存泄露
+    // 读取压缩数据
     u_char *Mdict::read_compress_data(uint64_t key_index_comp_len, uint64_t key_index_decomp_len, bool decrypt, bool use_zlib)
     {
         uint32_t comp_type;
@@ -352,13 +354,12 @@ namespace FreeMDict
         out_ << "checksum: " << checksum << std::endl;
         key_index_comp_len = key_index_comp_len - sizeof(comp_type) - sizeof(checksum);
 
-        //u_char *key_index_comp = new u_char[key_index_comp_len + 1];
-        u_char key_index_comp[key_index_comp_len + 1];
+        u_char *key_index_comp = new u_char[key_index_comp_len + 1];
         key_index_comp[key_index_comp_len] = 0;
         file_.read(reinterpret_cast<char *>(key_index_comp), key_index_comp_len);
         if (decrypt)
         {
-            byte *    key = ripemd128bytes(key_source, 8);
+            byte *key = ripemd128bytes(key_source, 8);
             if (key != nullptr)
             {
                 Utils::decrypt(key_index_comp, key_index_comp_len, reinterpret_cast<u_char *>(key), 16);
@@ -366,7 +367,7 @@ namespace FreeMDict
             else
             {
                 out_ << "RIPEMD-128哈希生成失败" << std::endl;
-                //delete[] key_index_comp;
+                delete[] key_index_comp;
                 return nullptr;
             }
         }
@@ -375,27 +376,24 @@ namespace FreeMDict
         if (comp_type == Utils::ZLIB_COMP_TYPE) // TODO: 扩充压缩，使用继承-注册的形式
         {
             key_index_decomp = Utils::zlibDecompress(key_index_comp, key_index_comp_len, key_index_decomp_len);
-            //delete[] key_index_comp;
+            delete[] key_index_comp;
             if (key_index_decomp == nullptr)
             {
                 out_ << "zlib解压缩失败" << std::endl;
                 return nullptr;
             }
-            //else
+            uint32_t adler32CheckSum = Utils::adler32(key_index_decomp, key_index_decomp_len);
+            out_ << "adler32CheckSum: " << adler32CheckSum << std::endl;
+            if (adler32CheckSum != checksum)
             {
-                uint32_t adler32CheckSum = Utils::adler32(key_index_decomp, key_index_decomp_len);
-                out_ << "adler32CheckSum: " << adler32CheckSum << std::endl;
-                if (adler32CheckSum != checksum)
-                {
-                    delete[] key_index_decomp;
-                    out_ << "校验和错误" << std::endl;
-                    return nullptr;
-                }
-                return key_index_decomp;
+                delete[] key_index_decomp;
+                out_ << "校验和错误" << std::endl;
+                return nullptr;
             }
+            return key_index_decomp;
         }
 
-        //delete[] key_index_comp;
+        delete[] key_index_comp;
 
         return nullptr;
     }
@@ -664,6 +662,7 @@ namespace FreeMDict
 
 #if SMALL_MEMORY
 
+        out_ << "关键词" << key << "查找范围：" << 0 << " - " << num_entries_ << std::endl;
         uint64_t offset = 0;
         for (int i = 0; i < key_blocks_.size(); ++i)
         {
@@ -690,7 +689,7 @@ namespace FreeMDict
         int right = keyword_items_.size() - 1;
         bool found = false;
         int mid = 0;
-
+        out_ << "关键词" << key << "查找范围：" << left << " - " << right << std::endl;
         while (left <= right)
         {
             mid = left + (right - left) / 2; // 避免整数溢出
@@ -767,6 +766,8 @@ namespace FreeMDict
         }
         keyword_items_.clear();
 #endif
+
+        return true;    
     }
 
     const std::vector<KeywordItem *> &Mdict::getKeywordItems() const
