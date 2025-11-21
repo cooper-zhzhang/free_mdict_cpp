@@ -118,9 +118,9 @@ make install
 ```
 
 安装后的文件将位于：
-- 可执行文件: `/usr/local/free_mdict/bin/free_mdict`
-- 静态库: `/usr/local/free_mdict/lib/libfree_mdict.a`
-- 头文件: `/usr/local/free_mdict/include/mdict_extern.h`
+- 可执行文件: `/usr/local/bin/free_mdict`
+- 静态库: `/usr/local/lib/free_mdict/libfree_mdict.a`
+- 头文件: `/usr/local/include/free_mdict/mdict_extern.h`
 
 ### 编译选项
 
@@ -146,5 +146,5 @@ cmake -DBUILD_TYPE=Debug ..
 
 
 ## 静态库使用
-安装静态库后，头文件`mdict_extern.h`位于`/usr/local/free_mdict/include/`目录下。
-链接静态库时，需要添加`-lfree_mdict`选项。
+安装静态库后，头文件`mdict_extern.h`位于`/usr/local/include/free_mdict/`目录下。
+链接静态库时，需要添加`-lfree_mdict -L/usr/local/lib/free_mdict`选项。

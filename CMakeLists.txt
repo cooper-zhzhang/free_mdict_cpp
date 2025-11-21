@@ -155,10 +155,10 @@ target_link_libraries(free_mdict free_mdict_static)
 
 # 安装配置
 install(TARGETS free_mdict_static
-    ARCHIVE DESTINATION free_mdict/lib
-    PUBLIC_HEADER DESTINATION free_mdict/include
+    ARCHIVE DESTINATION lib/free_mdict
+    PUBLIC_HEADER DESTINATION include/free_mdict
 )
 
 install(TARGETS free_mdict
-    RUNTIME DESTINATION free_mdict/bin
+    RUNTIME DESTINATION bin
 )
