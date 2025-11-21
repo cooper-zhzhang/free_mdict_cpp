@@ -27,7 +27,7 @@ void searchWords(FreeMDict::Mdict &mdict)
             break;
         }
         std::string result = mdict.lookup(word);
-        std::cout << result;// << std::endl;
+        std::cout << result;
     }
 }
 
