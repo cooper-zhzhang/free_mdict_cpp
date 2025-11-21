@@ -18,28 +18,31 @@ namespace FreeMDict {
         class Mdict {
     public:
         Mdict(std::string dict_path, std::ostream& out);
+        Mdict(std::string dict_path);
         ~Mdict();
+        bool init();
 
-        // 查找关键词，针对mdx. string不包含null character
-        std::string lookup(std::string key);
+        // return string not include null character for mdx
+        std::string lookup(std::string &key);
 
-        // 定位资源 string包含null character结束符
-        std::string locate(std::string key);
+        // locate resource by key, return const char* include null character(if exist) for mdd/mdx
+        std::string locate(const std::string &key);
+        
+        // locate resource by key, return const char* include null character(if exist) for mdd/mdx
+        const char* locate(const std::string &key, int &len);
+
+        //  get resource by key
+        bool getResourceByKey(std::string key, std::ostream& out);
 
         //  检查关键词是否存在
         bool exists(std::string key);
-
-        bool init();
-
-        //  通用的获取资源方法，将资源写入到out中
-        bool getResourceByKey(std::string key, std::ostream& out);
 
         const std::vector<KeywordItem*> &getKeywordItems() const;
 
         void displayInfo(); // 显示字典信息的方法
     
     private:
-        std::ostream& out_; // 存储输出流
+        
         int parseFile(); // 解析文件的私有方法
         int parseHead(); // 解析头的私有方法
         int parseKeywordSection(); // 解析关键词的私有方法
@@ -49,11 +52,14 @@ namespace FreeMDict {
         int parseRecordSection(); // 解析关键词记录的私有方法
 
         void clear_up_keyword_items();
+
+        const char* getResourceByKey(const std::string &key, int &len);
         
         u_char * read_compress_data(uint64_t key_index_comp_len, uint64_t  key_index_decomp_len, bool decrypt=false, bool use_zlib=false);
         KeywordItem getKeyWord(const std::string &key); // 根据关键词查找关键词项
         RecordBlockInfo* getRecordBlockInfo(uint64_t record_offset); // 根据记录偏移量查找记录块信息
 
+        std::string err_msg_; // 存储错误信息
 
         std::string dict_path_; // 存储字典文件路径
         FileType filetype_; // 存储文件类型
@@ -85,7 +91,6 @@ namespace FreeMDict {
 
         // record 相关
          std::vector<RecordBlockInfo*> record_blocks_;
-         //std::streampos record_section_begin_pos_; // 存储记录的位置
          std::streampos record_block_begin_pos_; // 存储记录的位置
 
         uint64_t com_record_blocks_size_; // 压缩后的记录块的大小
