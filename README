@@ -1,150 +1,133 @@
 # free_mdict_cpp
 
-## 项目概述
+## Project Overview
+free_mdict_cpp is an open-source MDX format dictionary file parsing tool that supports dictionary information display, keyword list output, and interactive word query functionality.
 
-free_mdict_cpp 是一个开源的 MDX 格式字典文件解析工具，支持字典信息显示、关键词列表输出和交互式单词查询功能。
-
-## 使用方法
-
-### 基本用法
+## Usage
+### Basic Usage
 
 ```bash
 ./free_mdict [options] <dict_path> 
 ```
 
-### 查看字典信息
+### View Dictionary Information
 
 ```bash
 ./free_mdict /path/to/dictionary.mdx
 ```
 
-### 列出所有关键词
+### List All Keywords
 
 ```bash
 ./free_mdict --keys /path/to/dictionary.mdx
-```
 
-### 交互式查询模式
-
+### Interactive Query Mode
 ```bash
 ./free_mdict --search /path/to/dictionary.mdx
 ```
 
-## 命令行参数说明
+### Command Line Parameters
 
-- `<dict_path>`: 字典文件路径（必需，作为位置参数提供）
-- `--verbose`: 启用详细输出信息
-- `--keys`: 列出所有关键词
-- `--search`: 启动交互式查询模式
-- `--help`: 显示帮助信息
+<dict_path>: Dictionary file path (required, provided as positional argument)
 
-## 性能特性
+--keys: List all keywords
 
-- 使用二分查找算法优化记录块的查询效率
-- 支持内存管理，在小内存模式下可以释放不再使用的资源
-- 提供字典初始化时间统计功能
+--search: Start interactive query mode
 
-## 开发与贡献
+--help: Display help information
 
-欢迎提交Issue和Pull Request来帮助改进这个项目。
+## Performance Features
+- Uses binary search algorithm to optimize record block query efficiency
+- Supports memory management, can release unused resources in small memory mode
+- Provides dictionary initialization time statistics
 
-## 依赖安装与编译
+## Development and Contribution
+Welcome to submit Issues and Pull Requests to help improve this project.
 
-### 依赖库
+## Dependency Installation and Compilation
 
-项目依赖以下库：
+### Dependencies
+The project depends on the following libraries:
 
-- CMake (3.10或更高版本)
+- CMake (version 3.10 or higher)
 - zlib
-- gflags (可选)
+- gflags (optional) only for Executable program not for lib
 
-### 在macOS上安装依赖
-
-使用Homebrew安装依赖：
+### Installing Dependencies on macOS
+Using Homebrew to install dependencies:
 
 ```bash
 brew install cmake zlib gflags
 ```
 
-### 在Ubuntu/Debian上安装依赖
-
-使用apt安装依赖：
+### Installing Dependencies on Ubuntu/Debian
+Using apt to install dependencies:
 
 ```bash
 sudo apt-get update
 sudo apt-get install cmake libz-dev libgflags-dev
 ```
 
-### 在CentOS/RHEL上安装依赖
-
-使用yum安装依赖：
+### Installing Dependencies on CentOS/RHEL
+Using yum to install dependencies:
 
 ```bash
 sudo yum install cmake zlib-devel gflags-devel
 ```
-
-### 编译项目
-
-1. 克隆仓库
+### Compiling the Project
+1. Clone the repository
 
 ```bash
 git clone git@github.com:cooper-zhzhang/free_mdict_cpp.git
 cd free_mdict_cpp
 ```
 
-2. 创建构建目录
+2. Create build directory
 
 ```bash
 mkdir build
 cd build
 ```
-
-3. 配置项目（默认使用Release模式）
+3. Configure the project (uses Release mode by default)
 
 ```bash
 cmake ..
 ```
-
-4. 编译项目
+4. Compile the project
 
 ```bash
-make -j$(nproc)  # 或使用 make -j$(sysctl -n hw.ncpu) (在macOS上)
+make -j$(nproc)  # or use make -j$(sysctl -n hw.ncpu) (on macOS)
 ```
-
-5. 安装（可选）
+5. Install (optional)
 
 ```bash
 make install
 ```
+Installed files will be located at:
+- Executable: /usr/local/bin/free_mdict
+- Static library: /usr/local/lib/free_mdict/libfree_mdict.a
+- Header files: /usr/local/include/free_mdict/mdict_extern.h
 
-安装后的文件将位于：
-- 可执行文件: `/usr/local/bin/free_mdict`
-- 静态库: `/usr/local/lib/free_mdict/libfree_mdict.a`
-- 头文件: `/usr/local/include/free_mdict/mdict_extern.h`
-
-### 编译选项
-
-可以通过CMake选项自定义编译行为：
+### Compilation Options
+Customize compilation behavior through CMake options:
 
 ```bash
-# 启用小内存模式
+# Enable small memory mode
 cmake -DSMALL_MEMORY=ON ..
-目前小内存模式下，查询速度可能会变慢，因为需要频繁分配和释放内存。
-小内存模式下不支持获取所有关键词，只能查询单个关键词。
+# Note: In small memory mode, query speed may slow down due to frequent memory allocation and deallocation.
+# Small memory mode does not support getting all keywords, only single keyword queries.
 
-# 更改构建类型（Debug/Release）
+# Change build type (Debug/Release)
 cmake -DBUILD_TYPE=Debug ..
 ```
 
-## 注意事项
+## Important Notes
+- Current version primarily supports MDX format dictionary files
+- Currently only supports dictionary files of version 2.0
+- Only supports UTF-8/UTF-16 encoded dictionary files
+- Only supports zlib compressed dictionary files
+- Please ensure the dictionary files used are in correct and complete format
 
-- 当前版本主要支持MDX格式字典文件
-- 当前仅支持version 2.0的字典文件
-- 仅支持UTF-8/UTF-16编码的字典文件
-- 仅支持zlib压缩的字典文件
-- 请确保使用的字典文件格式正确且完整
-
-
-## 静态库使用
-安装静态库后，头文件`mdict_extern.h`位于`/usr/local/include/free_mdict/`目录下。
-链接静态库时，需要添加`-lfree_mdict -L/usr/local/lib/free_mdict`选项。
+## Static Library Usage
+After installing the static library, the header file mdict_extern.h is located in the /usr/local/include/free_mdict/ directory.
+When linking the static library, you need to add the -lfree_mdict -L/usr/local/lib/free_mdict options.
