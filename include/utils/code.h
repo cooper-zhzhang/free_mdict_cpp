@@ -4,6 +4,7 @@
 #include <string>
 #include <codecvt>
 #include <locale>
+#include <cstring>
 
 // 定义u_char类型为unsigned char
 typedef unsigned char u_char;
@@ -148,7 +149,7 @@ namespace FreeMDict
             else
             {
                 // 系统是小端，直接内存拷贝
-                std::memcpy(result.data(), utf16leBytes.data(), utf16leBytes.size());
+                memcpy(result.data(), utf16leBytes.data(), utf16leBytes.size());
             }
 
             return result;

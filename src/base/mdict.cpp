@@ -5,6 +5,8 @@
 #include "include/utils/compress.h"
 #include "include/utils/ripemd128.h"
 #include <thread>
+#include <algorithm>
+#include <sstream>
 
 // 确保正确识别C语言函数
 extern "C"
@@ -89,7 +91,7 @@ namespace FreeMDict
             throw std::runtime_error("parse file failed : " + dict_path_);
         }
         // 有些字典中的顺序和关键词记录中的顺序不一致，需要排序
-        sort(keyword_items_.begin(), keyword_items_.end(), [](const KeywordItem *a, const KeywordItem *b)
+        std::sort(keyword_items_.begin(), keyword_items_.end(), [](const KeywordItem *a, const KeywordItem *b)
              { return a->keyword < b->keyword; });
 
         return true;
