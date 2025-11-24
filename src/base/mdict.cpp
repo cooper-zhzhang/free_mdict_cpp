@@ -24,7 +24,7 @@ extern "C"
 
 namespace FreeMDict
 {
-    Mdict::Mdict(std::string dict_path) : dict_path_(dict_path), encrypted_(0), code_type_(Utils::CodeType::UTF16LE), key_index_decomp_len_(0), key_index_comp_len_(0),record_blocks_(), key_blocks_(), keyword_items_()
+    Mdict::Mdict(std::string dict_path) : dict_path_(dict_path)
     {
         std::string end_with;
         for (int i = dict_path_.size() - 1; i > 0; i--)
@@ -46,26 +46,6 @@ namespace FreeMDict
         }
         // mdd默认
         code_type_ = Utils::CodeType::UTF16LE;
-
-        err_msg_ = ""; // 存储错误信息
-        head_pos_ = 0; // 存储头的位置
-        version_ = ""; // 存储版本号
-        head_size_ = 0; // 存储头的大小
-        // keywords分两部分，1 keywords index，2 keywords blocks
-        // keywords相关
-        keyword_pos_ = 0; // 存储关键词的位置
-        //  keywords index 相关
-        key_blocks_num_ = 0; // keywords存储块的数量
-        num_entries_ = 0; // keywords的数量
-        key_index_decomp_len_ = 0;  // 加压后的长度 
-        key_index_comp_len_ = 0;  // 压缩后的长度
-        key_blocks_len_ = 0;  // 所有关键词块的长度
-
-        // keywords blocks 相关
-        keyword_blocks_begin_pos_ = 0; // 存储关键词块的位置
-        record_block_begin_pos_ = 0; // 存储记录的位置
-        com_record_blocks_size_ = 0; // 压缩后的记录块的大小
-        decomp_record_blocks_size_ = 0; // 解压后的记录块的大小
     }
 
     Mdict::~Mdict()
