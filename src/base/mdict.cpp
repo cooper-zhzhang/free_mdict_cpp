@@ -7,8 +7,9 @@
 #include <thread>
 #include <algorithm>
 #include <sstream>
+#include <memory>
 
-// 确保正确识别C语言函数
+// Ensure correct recognition of C language functions
 extern "C"
 {
     byte *ripemd128bytes(uint8_t *message, int length);
@@ -44,13 +45,13 @@ namespace FreeMDict
         {
             this->filetype_ = FileType::MDXTYPE;
         }
-        // mdd默认
+        // Default for mdd
         code_type_ = Utils::CodeType::UTF16LE;
     }
 
     Mdict::~Mdict()
     {
-        // 关闭文件流
+        // Close file stream
         file_.close();
         for (auto it : keyword_items_)
         {
@@ -79,7 +80,7 @@ namespace FreeMDict
             return false;
         }
 
-        // 打开文件流（二进制模式）
+        // Open file stream (binary mode)
         file_ = std::ifstream(dict_path_, std::ios::binary);
         if (!file_.is_open())
         {
@@ -90,37 +91,36 @@ namespace FreeMDict
         {
             throw std::runtime_error("parse file failed : " + dict_path_);
         }
-        // 有些字典中的顺序和关键词记录中的顺序不一致，需要排序
+        // Some dictionaries have inconsistent order with keyword records, need sorting
         std::sort(keyword_items_.begin(), keyword_items_.end(), [](const KeywordItem *a, const KeywordItem *b)
-             { return a->keyword < b->keyword; });
+                  { return a->keyword < b->keyword; });
 
         return true;
     }
 
     void Mdict::displayInfo()
     {
-        
     }
 
     int Mdict::parseFile()
     {
         if (parseHead() != 0)
         {
-            std::cerr << "parse head error:" <<this->err_msg_  << std::endl;
+            std::cerr << "parse head error:" << this->err_msg_ << std::endl;
             return -1;
         }
         keyword_pos_ = file_.tellg();
         // KeyWord section
         if (parseKeywordSection() != 0)
         {
-            std::cerr << "parse keyword section error:" <<this->err_msg_  << std::endl;
+            std::cerr << "parse keyword section error:" << this->err_msg_ << std::endl;
             return -1;
         }
 
         // Record section
         if (parseRecordSection() != 0)
         {
-            std::cerr << "parse record section error:" <<this->err_msg_  << std::endl;
+            std::cerr << "parse record section error:" << this->err_msg_ << std::endl;
             return -1;
         }
 
@@ -139,7 +139,7 @@ namespace FreeMDict
         int32_t head_size = 0;
         file_.read(reinterpret_cast<char *>(&head_size), sizeof(head_size));
         head_size = Utils::fromBigEndianInt32(head_size);
-        
+
         if (head_size <= 0)
         {
             std::cerr << "head_size error" << std::endl;
@@ -147,13 +147,13 @@ namespace FreeMDict
             return -1;
         }
 
-        // 获取当前文件偏移量
+        // Get current file offset
         std::streampos current_pos = file_.tellg();
 
         std::string head(head_size, '\0');
         file_.read(head.data(), head_size);
 
-        // 获取当前文件偏移量
+        // Get current file offset
         current_pos = file_.tellg();
 
         uint32_t checkSum;
@@ -172,7 +172,7 @@ namespace FreeMDict
         std::u16string head_u16 = Utils::utf16leToU16String(head);
         std::string head_utf8 = Utils::utf16leToUtf8(head_u16);
 
-        // 调用XML解析功能
+        // Call XML parsing functionality
         std::map<std::u16string, std::u16string> attributes = Utils::parseXmlHead(head_u16);
         if (attributes.empty())
         {
@@ -246,7 +246,6 @@ namespace FreeMDict
             return -1;
         }
 
-
         const int keyword_header_count = 5;
         const int keyword_header_size = keyword_header_count * sizeof(uint64_t);
         u_char keyword_header[keyword_header_size];
@@ -274,29 +273,30 @@ namespace FreeMDict
 
         if (parseKeywordIndex() != 0)
         {
-            std::cerr << "parse keyword index error:" <<this->err_msg_  << std::endl;
+            std::cerr << "parse keyword index error:" << this->err_msg_ << std::endl;
             return -1;
         }
 
-        if (parseKeywordBlocks() != 0) // key 和offset
+        if (parseKeywordBlocks() != 0) // key and offset
         {
-            std::cerr << "parse keyword block error:" <<this->err_msg_  << std::endl;
+            std::cerr << "parse keyword block error:" << this->err_msg_ << std::endl;
             return -1;
         }
 
         return 0;
     }
 
-    // 读取压缩数据
+    // Read compressed data
     u_char *Mdict::read_compress_data(uint64_t key_index_comp_len, uint64_t key_index_decomp_len, bool decrypt, bool use_zlib)
     {
         uint32_t comp_type;
         file_.read(reinterpret_cast<char *>(&comp_type), sizeof(comp_type));
-        // 直接对比字节位
-       if (comp_type == Utils::ZLIB_COMP_TYPE)
-        {
+        // Direct byte comparison
 
-        }else if (comp_type == Utils::NO_COMP_TYPE)
+        if (comp_type == Utils::ZLIB_COMP_TYPE)
+        {
+        }
+        else if (comp_type == Utils::NO_COMP_TYPE)
         {
             this->err_msg_ = "not support NO_COMP_TYPE";
             return nullptr;
@@ -317,48 +317,41 @@ namespace FreeMDict
         file_.read(reinterpret_cast<char *>(&checksum), sizeof(checksum));
         memcpy(key_source, &checksum, sizeof(checksum)); // 0-3
         checksum = Utils::fromBigEndianUInt32(checksum);
-        
-        key_index_comp_len = key_index_comp_len - sizeof(comp_type) - sizeof(checksum);
 
-        u_char *key_index_comp = new u_char[key_index_comp_len + 1];
-        key_index_comp[key_index_comp_len] = 0;
-        file_.read(reinterpret_cast<char *>(key_index_comp), key_index_comp_len);
+        key_index_comp_len = key_index_comp_len - sizeof(comp_type) - sizeof(checksum);
+        std::unique_ptr<u_char[]> key_index_comp = std::make_unique<u_char[]>(key_index_comp_len + 1);
+        key_index_comp.get()[key_index_comp_len] = 0;
+        file_.read(reinterpret_cast<char *>(key_index_comp.get()), key_index_comp_len);
         if (decrypt)
         {
             byte *key = ripemd128bytes(key_source, 8);
             if (key != nullptr)
             {
-                Utils::decrypt(key_index_comp, key_index_comp_len, reinterpret_cast<u_char *>(key), 16);
+                Utils::decrypt(key_index_comp.get(), key_index_comp_len, reinterpret_cast<u_char *>(key), 16);
             }
             else
             {
                 this->err_msg_ = "RIPEMD-128 hash generate failed";
-                delete[] key_index_comp;
                 return nullptr;
             }
         }
 
-        u_char *key_index_decomp = nullptr;
-        if (comp_type == Utils::ZLIB_COMP_TYPE) // TODO: 扩充压缩，使用继承-注册的形式
+        if (comp_type == Utils::ZLIB_COMP_TYPE) // TODO: Expand compression, use inheritance-registration pattern
         {
-            key_index_decomp = Utils::zlibDecompress(key_index_comp, key_index_comp_len, key_index_decomp_len);
-            delete[] key_index_comp;
-            if (key_index_decomp == nullptr)
+            std::unique_ptr<u_char[]> key_index_decomp_ptr(Utils::zlibDecompress(key_index_comp.get(), key_index_comp_len, key_index_decomp_len));
+            if (key_index_decomp_ptr == nullptr)
             {
                 this->err_msg_ = "zlib decompress failed";
                 return nullptr;
             }
-            uint32_t adler32CheckSum = Utils::adler32(key_index_decomp, key_index_decomp_len);
+            uint32_t adler32CheckSum = Utils::adler32(key_index_decomp_ptr.get(), key_index_decomp_len);
             if (adler32CheckSum != checksum)
             {
-                delete[] key_index_decomp;
                 std::cerr << "adler32 checksum error: " << adler32CheckSum << " != " << checksum << std::endl;
                 return nullptr;
             }
-            return key_index_decomp;
+            return key_index_decomp_ptr.release();
         }
-
-        delete[] key_index_comp;
 
         return nullptr;
     }
@@ -372,6 +365,7 @@ namespace FreeMDict
             return -1;
         }
 
+        std::unique_ptr<u_char[]> key_index_decomp_ptr(key_index_decomp);
         int pos = 0;
         for (size_t i = 0; i < key_blocks_num_; ++i)
         {
@@ -380,7 +374,7 @@ namespace FreeMDict
 
             uint16_t first_word_len = Utils::fromBigEndianUInt16(key_index_decomp + pos, sizeof(uint16_t)); // Length of first_word[0], not including trailing null character. In number of “basic units” for the encoding, so e.g. bytes for UTF-8, and 2-byte units for UTF-16.
             pos += sizeof(uint16_t);
-            first_word_len += 1; // 包含 trailing null character
+            first_word_len += 1; // Include trailing null character
             first_word_len *= getCodeTypeSize(code_type_);
 
             std::string first_word_utf8;
@@ -397,20 +391,20 @@ namespace FreeMDict
             uint16_t last_word_len = Utils::fromBigEndianUInt16(key_index_decomp + pos, sizeof(uint16_t)); // Length of last_word[0], not including trailing null character. In number of “basic units” for the encoding, so e.g. bytes for UTF-8, and 2-byte units for UTF-16.
             pos += sizeof(uint16_t);
 
-            last_word_len += 1; // 包含 trailing null character
+            last_word_len += 1; // Include trailing null character
             last_word_len *= getCodeTypeSize(code_type_);
-            
+
             std::string last_word_utf8;
             if (code_type_ == Utils::CodeType::UTF16LE)
             {
-                last_word_utf8 = Utils::utf16leToUtf8((char16_t *)(key_index_decomp + pos), (char16_t *)(key_index_decomp + pos + last_word_len - getCodeTypeSize(code_type_))); // 不要最后的null character
+                last_word_utf8 = Utils::utf16leToUtf8((char16_t *)(key_index_decomp + pos), (char16_t *)(key_index_decomp + pos + last_word_len - getCodeTypeSize(code_type_))); // Exclude the last null character
             }
             else if (code_type_ == Utils::CodeType::UTF8)
             {
                 last_word_utf8 = std::string((char *)(key_index_decomp + pos), last_word_len - getCodeTypeSize(code_type_));
             }
             pos += last_word_len;
-            
+
             uint64_t comp_size = Utils::fromBigEndianUInt64(key_index_decomp + pos, sizeof(uint64_t));
             pos += sizeof(uint64_t);
 
@@ -421,8 +415,6 @@ namespace FreeMDict
                                                static_cast<uint32_t>(comp_size), static_cast<uint32_t>(keywords_num));
             key_blocks_.push_back(block_ptr);
         }
-
-        delete[] key_index_decomp;
 
         return 0;
     }
@@ -435,8 +427,8 @@ namespace FreeMDict
         }
 
         KeyBlock *block = key_blocks_[i];
-        u_char *key_index_decomp = read_compress_data(block->comp_size, block->decomp_size);
-        if (key_index_decomp == nullptr)
+        std::unique_ptr<u_char[]> key_index_decomp_ptr(read_compress_data(block->comp_size, block->decomp_size));
+        if (key_index_decomp_ptr == nullptr)
         {
             std::cerr << "read_compress_data failed: " << this->err_msg_ << std::endl;
             return -1;
@@ -447,7 +439,7 @@ namespace FreeMDict
         uint keywords_num = block->keywords_num;
         for (int j = 0; j < keywords_num; ++j)
         {
-            uint64_t keyword_offset = Utils::fromBigEndianUInt64(key_index_decomp + pos, sizeof(uint64_t));
+            uint64_t keyword_offset = Utils::fromBigEndianUInt64(key_index_decomp_ptr.get() + pos, sizeof(uint64_t));
             pos += sizeof(uint64_t);
 
             uint64_t begin_pos = pos;
@@ -455,17 +447,17 @@ namespace FreeMDict
             std::string keyword_utf8;
             if (code_type_ == Utils::CodeType::UTF16LE)
             {
-                uint64_t off = Utils::check_null<char16_t>(key_index_decomp + pos, block->decomp_size - pos);
+                uint64_t off = Utils::check_null<char16_t>(key_index_decomp_ptr.get() + pos, block->decomp_size - pos);
                 pos += off;
                 end_pos = pos - sizeof(char16_t); // ignore null character
-                keyword_utf8 = Utils::utf16leToUtf8((char16_t *)(key_index_decomp + begin_pos), (char16_t *)(key_index_decomp + end_pos));
+                keyword_utf8 = Utils::utf16leToUtf8((char16_t *)(key_index_decomp_ptr.get() + begin_pos), (char16_t *)(key_index_decomp_ptr.get() + end_pos));
             }
             else if (code_type_ == Utils::CodeType::UTF8)
             {
-                uint64_t off = Utils::check_null<char>(key_index_decomp + pos, block->decomp_size - pos);
+                uint64_t off = Utils::check_null<char>(key_index_decomp_ptr.get() + pos, block->decomp_size - pos);
                 pos += off;
                 end_pos = pos - sizeof(char);
-                keyword_utf8 = std::string((char *)(key_index_decomp + begin_pos), end_pos - begin_pos);
+                keyword_utf8 = std::string((char *)(key_index_decomp_ptr.get() + begin_pos), end_pos - begin_pos);
             }
 
             KeywordItem *item = new KeywordItem(std::move(keyword_utf8), keyword_offset);
@@ -476,7 +468,6 @@ namespace FreeMDict
             }
             pre_item = item;
         }
-        delete[] key_index_decomp;
 
         return 0;
     }
@@ -486,7 +477,7 @@ namespace FreeMDict
         keyword_blocks_begin_pos_ = file_.tellg();
 
 #ifdef SMALL_MEMORY
-        // 这部分数据是内存大头。小内存下不读取
+        // This data takes up most memory. Not loaded in small memory mode
         uint64_t offset = 0;
         for (int i = 0; i < key_blocks_.size(); ++i)
         {
@@ -521,7 +512,7 @@ namespace FreeMDict
         if (num_entries != num_entries_)
         {
 #ifndef SMALL_MEMORY
-            std::cerr << "RecordSection num_entries != "<< num_entries << "keyword num_entries: " << num_entries_ << std::endl;
+            std::cerr << "RecordSection num_entries != " << num_entries << "keyword num_entries: " << num_entries_ << std::endl;
             return -1;
 #endif // SMALL_MEMORY
         }
@@ -595,15 +586,15 @@ namespace FreeMDict
         }
 #endif // SMALL_MEMORY
 
-        // 使用二分查找代替线性查找，提高查找效率（假设keyword_items_已按keyword_utf8排序）
+        // Use binary search instead of linear search to improve efficiency (assuming keyword_items_ is sorted by keyword_utf8)
         int left = 0;
         int right = keyword_items_.size() - 1;
         bool found = false;
         int mid = 0;
-        
+
         while (left <= right)
         {
-            mid = left + (right - left) / 2; // 避免整数溢出
+            mid = left + (right - left) / 2; // Avoid integer overflow
             const std::string &mid_keyword = keyword_items_[mid]->keyword;
 
             int cmp_result = mid_keyword.compare(key);
@@ -637,7 +628,7 @@ namespace FreeMDict
 
     void Mdict::clear_up_keyword_items()
     {
-        // 小内存下，需要释放keyword_items_
+        // In small memory mode, need to release keyword_items_
         for (int i = 0; i < keyword_items_.size(); ++i)
         {
             delete keyword_items_[i];
@@ -680,9 +671,9 @@ namespace FreeMDict
         return str;
     }
 
-    const char* Mdict::getResourceByKey(const std::string &key, int &len)
+    const char *Mdict::getResourceByKey(const std::string &key, int &len)
     {
-        // 1 查找关键词项
+        // 1. Find keyword item
         KeywordItem keyword_item = getKeyWord(key);
         if (keyword_item.keyword.empty())
         {
@@ -695,21 +686,19 @@ namespace FreeMDict
             return nullptr;
         }
 
-        // 3 提取记录
+        // 3. Extract record
         file_.seekg(record_block->com_record_begin_offset + record_block_begin_pos_);
-        auto decompressed_data = read_compress_data(record_block->comp_size, record_block->decomp_size);
-        if (decompressed_data == 0)
+        std::unique_ptr<u_char[]> decompressed_data_ptr(read_compress_data(record_block->comp_size, record_block->decomp_size));
+        if (decompressed_data_ptr == nullptr)
         {
             std::cerr << "decompress record failed" << std::endl;
             return nullptr;
         }
 
-        auto begin_pos = decompressed_data + (keyword_item.record_offset - record_block->decomp_record_begin_offset);
+        auto begin_pos = decompressed_data_ptr.get() + (keyword_item.record_offset - record_block->decomp_record_begin_offset);
         len = keyword_item.record_size;
         char *result = new char[keyword_item.record_size];
         memcpy(result, begin_pos, keyword_item.record_size);
-
-        delete[] decompressed_data;
 
         return result;
     }
@@ -717,7 +706,7 @@ namespace FreeMDict
     bool Mdict::getResourceByKey(std::string key, std::ostream &out)
     {
         int len = 0;
-        const char* result = getResourceByKey(key, len);
+        const char *result = getResourceByKey(key, len);
         if (result == nullptr)
         {
             return false;
@@ -734,8 +723,14 @@ namespace FreeMDict
         return keyword_items_;
     }
 
-    const char* Mdict::locate(const std::string &key, int &len){
+    const char *Mdict::locate(const std::string &key, int &len)
+    {
         return getResourceByKey(key, len);
+    }
+
+    void Mdict::dumpAll()
+    {
+        
     }
 
 } // namespace FreeMDict

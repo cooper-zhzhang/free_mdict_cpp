@@ -6,7 +6,7 @@
 #include <locale>
 #include <cstring>
 
-// 定义u_char类型为unsigned char
+// Define u_char type as unsigned char
 typedef unsigned char u_char;
 
 namespace FreeMDict
@@ -14,11 +14,11 @@ namespace FreeMDict
     namespace Utils
     {
         /**
-         * @brief 检测本机的字节序（大小端）
-         * @return true 表示大端（Big Endian），false 表示小端（Little Endian）
+         * @brief Detect the machine's byte order (endianness)
+         * @return true for Big Endian, false for Little Endian
          *
-         * 大端模式：高位字节存储在低地址
-         * 小端模式：低位字节存储在低地址
+         * Big Endian: Most significant byte is stored at the lowest address
+         * Little Endian: Least significant byte is stored at the lowest address
          */
         inline bool isBigEndian()
         {
@@ -69,9 +69,9 @@ namespace FreeMDict
         }
 
         /**
-         * @brief 将大端的int32转为本机字节序的int32
-         * @param bigEndianValue 大端字节序的int32值
-         * @return 转换为本机字节序后的int32值
+         * @brief Convert big-endian int32 to native byte order int32
+         * @param bigEndianValue Big-endian int32 value
+         * @return Converted int32 value in native byte order
          */
         inline int32_t fromBigEndianInt32(int32_t bigEndianValue)
         {
@@ -89,9 +89,9 @@ namespace FreeMDict
         }
 
         /**
-         * @brief 将小端的int32转为本机字节序的int32
-         * @param littleEndianValue 小端字节序的int32值
-         * @return 转换为本机字节序后的int32值
+         * @brief Convert little-endian int32 to native byte order int32
+         * @param littleEndianValue Little-endian int32 value
+         * @return Converted int32 value in native byte order
          */
         inline int32_t fromLittleEndianInt32(int32_t littleEndianValue)
         {
@@ -156,16 +156,16 @@ namespace FreeMDict
         }
 
         /**
-         * @brief 计算ADLER32校验和
-         * @param utf16leBytes 输入的UTF-16LE字节数据
-         * @return ADLER32校验和结果（uint32_t）
+         * @brief Calculate ADLER32 checksum
+         * @param utf16leBytes Input UTF-16LE byte data
+         * @return ADLER32 checksum result (uint32_t)
          *
-         * ADLER32算法：
-         * 1. 初始化a=1，b=0
-         * 2. 对每个字节byte：
+         * ADLER32 algorithm:
+         * 1. Initialize a=1, b=0
+         * 2. For each byte:
          *    a = (a + byte) % 65521
          *    b = (b + a) % 65521
-         * 3. 返回 (b << 16) | a
+         * 3. Return (b << 16) | a
          */
         inline uint32_t adler32(const std::string &utf16leBytes)
         {
@@ -185,10 +185,10 @@ namespace FreeMDict
         }
 
         /**
-         * @brief 计算ADLER32校验和（基于字节数组）
-         * @param keyword_header 输入的字节数组
-         * @param size 数组大小
-         * @return ADLER32校验和结果（uint32_t）
+         * @brief Calculate ADLER32 checksum (based on byte array)
+         * @param keyword_header Input byte array
+         * @param size Array size
+         * @return ADLER32 checksum result (uint32_t)
          */
         inline uint32_t adler32(const u_char keyword_header[], size_t size)
         {

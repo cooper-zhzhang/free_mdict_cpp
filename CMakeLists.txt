@@ -1,16 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 
-# 项目名称
 project(FreeMDict CXX)
 
-# 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 添加构建类型选项，默认为Release
 option(BUILD_TYPE "选择构建类型: Debug 或 Release" Release)
 
-# 添加SMALL_MEMORY选项，默认为OFF
 option(SMALL_MEMORY "启用小内存模式" OFF)
 
 

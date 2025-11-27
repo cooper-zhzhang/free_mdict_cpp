@@ -1,9 +1,5 @@
 #include "include/utils/code.h"
 
-// 注意：由于这些函数在头文件中已经使用inline关键字定义，
-// 这里的cpp文件主要是为了完整性，实际使用时编译器会直接内联这些函数
-// 如果将来需要添加非内联函数，可以在这里实现
-
 namespace FreeMDict
 {
     namespace Utils
@@ -29,7 +25,6 @@ namespace FreeMDict
         
         uint64_t fromBigEndianUInt64(uint64_t bigEndianValue)
         {
-            // 如果本机是大端，直接返回
             if (isBigEndian())
             {
                 return bigEndianValue;

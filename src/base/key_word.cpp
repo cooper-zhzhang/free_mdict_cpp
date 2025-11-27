@@ -3,9 +3,9 @@
 namespace FreeMDict
 {
 
-    // 默认构造函数
+    // Default constructor
     KeyBlock::KeyBlock() : decomp_size(0), comp_size(0) {}
-    // 构造函数
+    // Constructor
     KeyBlock::KeyBlock(std::string first_key, std::string last_key,
                        uint32_t decomp_size, uint32_t comp_size,
                        uint32_t keywords_num) : first_key(first_key),
@@ -13,17 +13,17 @@ namespace FreeMDict
                                                 decomp_size(decomp_size),
                                                 comp_size(comp_size),
                                                 keywords_num(keywords_num) {}
-    // 复制构造函数
+    // Copy constructor
     KeyBlock::KeyBlock(const KeyBlock &other) : first_key(other.first_key),
                                                 last_key(other.last_key),
                                                 decomp_size(other.decomp_size),
                                                 comp_size(other.comp_size) {}
 
-    // 构造函数
+    // Constructor
     KeywordItem::KeywordItem(std::string &&keyword, uint64_t offset) : keyword(std::move(keyword)),
                                                                        record_offset(offset), record_size(0) {}
 
-    // 移动构造函数
+    // Move constructor
     KeywordItem::KeywordItem(KeywordItem &&other) noexcept : keyword(std::move(other.keyword)),
                                                              record_offset(other.record_offset),
                                                              record_size(other.record_size)
@@ -32,7 +32,7 @@ namespace FreeMDict
         other.record_size = 0;
     }
 
-    // 赋值运算符
+    // Assignment operator
     KeywordItem &KeywordItem::operator=(KeywordItem &other) noexcept
     {
         keyword = other.keyword;

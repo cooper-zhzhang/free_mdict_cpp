@@ -14,36 +14,36 @@ namespace FreeMDict
 {   
     namespace Utils
     {
-        u_char *zlibDecompress(u_char *key_index_comp, uint64_t key_index_comp_len, uint64_t key_index_decomp_len)
+        u_char* zlibDecompress(u_char *key_index_comp, uint64_t key_index_comp_len, uint64_t key_index_decomp_len)
         {
             u_char *decomp = new u_char[key_index_decomp_len];
 
-            // 使用zlib进行解压缩
+            // Use zlib for decompression
             z_stream zs;
             memset(&zs, 0, sizeof(zs));
 
-            // 初始化zlib解压缩流
+            // Initialize zlib decompression stream
             if (inflateInit(&zs) != Z_OK)
             {
                 delete[] decomp;
                 return nullptr;
             }
 
-            // 设置输入缓冲区
+            // Set input buffer
             zs.next_in = reinterpret_cast<Bytef *>(key_index_comp);
             zs.avail_in = static_cast<uInt>(key_index_comp_len);
 
-            // 设置输出缓冲区
+            // Set output buffer
             zs.next_out = reinterpret_cast<Bytef *>(decomp);
             zs.avail_out = static_cast<uInt>(key_index_decomp_len);
 
-            // 执行解压缩
+            // Execute decompression
             int ret = inflate(&zs, Z_FINISH);
 
-            // 清理zlib流
+            // Clean up zlib stream
             inflateEnd(&zs);
 
-            // 检查解压缩是否成功
+            // Check if decompression succeeded
             if (ret != Z_STREAM_END)
             {
                 delete[] decomp;
