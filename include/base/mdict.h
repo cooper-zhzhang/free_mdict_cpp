@@ -41,7 +41,7 @@ namespace FreeMDict {
 
         void displayInfo(); // Method to display dictionary information
 
-        void dumpAll(); // Method to dump all keywords
+        void dumpAll(const std::string &dir); // Method to dump all keywords
     
     private:
         

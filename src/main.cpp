@@ -42,6 +42,7 @@ DEFINE_bool(verbose, false, "启用详细输出信息");
 DEFINE_bool(keys, false, "列出所有关键词");
 DEFINE_bool(search, false, "搜索关键词");
 DEFINE_bool(check, false, "检查字典文件");
+DEFINE_string(dump, "./dump.txt", "转储所有字典数据");
 
 int main(int argc, char *argv[])
 {
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
         std::cout << "  --verbose           Enable verbose output" << std::endl;
         std::cout << "  --keys     List all keywords" << std::endl;
         std::cout << "  --help              Display this help message" << std::endl;
+        std::cout << "  --dump             Dump all dictionary data" << std::endl;
         std::cout << "  <dict_path>       Dictionary file path (required)" << std::endl;
         return 1;
     }
@@ -64,18 +66,17 @@ int main(int argc, char *argv[])
     
     FreeMDict::Mdict mdict(dict_path);
     mdict.init();
-    // mdict.dumpAll();
-    // return 0;
 
     int64_t end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     std::cout << "init cost time " << end - begintime << " ms" << std::endl;
 
     if (FLAGS_keys) {
         listKeywords(mdict);
-        return 0;
     }else if (FLAGS_search) {
         searchWords(mdict);
-        return 0;
+    }else if (FLAGS_check) {
+    }else if (!gflags::GetCommandLineFlagInfoOrDie("dump").is_default) {
+        mdict.dumpAll(FLAGS_dump.c_str());
     }
     
     return 0;

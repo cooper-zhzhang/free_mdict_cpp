@@ -728,9 +728,46 @@ namespace FreeMDict
         return getResourceByKey(key, len);
     }
 
-    void Mdict::dumpAll()
+    void Mdict::dumpAll(const std::string &dir)
     {
-        
+        std::vector<KeywordItem *> keywords(keyword_items_.begin(), keyword_items_.end());
+        std::sort(keywords.begin(), keywords.end(), [](const KeywordItem *a, const KeywordItem *b)
+                  { return a->record_offset < b->record_offset; });
+
+        RecordBlockInfo *record_block = nullptr;
+        std::unique_ptr<u_char[]> decompressed_data_ptr_holder(nullptr);
+        for (auto keyword : keywords)
+        {
+            if (record_block == nullptr ||
+                !(record_block->decomp_record_begin_offset + record_block->decomp_size >= keyword->record_offset + keyword->record_size &&
+                  record_block->decomp_record_begin_offset <= keyword->record_offset))
+            {
+                record_block = getRecordBlockInfo(keyword->record_offset);
+                if (record_block == nullptr)
+                {
+                    continue;
+                }
+
+                file_.seekg(record_block->com_record_begin_offset + record_block_begin_pos_);
+                decompressed_data_ptr_holder = std::unique_ptr<u_char[]>(read_compress_data(record_block->comp_size, record_block->decomp_size));
+                if (decompressed_data_ptr_holder == nullptr)
+                {
+                    std::cerr << "decompress record failed" << std::endl;
+                    continue;
+                }
+            }
+
+            std::ofstream out_stream(dir + keyword->keyword);
+            if (!out_stream.is_open())
+            {
+                std::cerr << "open file failed" << std::endl;
+                continue;
+            }
+
+            auto begin_pos = decompressed_data_ptr_holder.get() + (keyword->record_offset - record_block->decomp_record_begin_offset);
+            out_stream.write((char *)begin_pos, keyword->record_size);
+            out_stream.close();
+        }
     }
 
 } // namespace FreeMDict
